@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>嘉雲臺 4房1套 1811呎 · 室內設計 3D VR 導覽</title>
+<link rel="stylesheet" href="assets/pannellum.css">
+<style>
+  :root{
+    --ink:#111417;
+    --bar:rgba(20,22,25,.72);
+    --bar-solid:rgba(20,22,25,.92);
+    --line:rgba(255,255,255,.16);
+    --accent:#22c55e;
+    --text:#f4f6f7;
+    --muted:#b9c0c6;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%;background:#0d0f11;overflow:hidden;
+    font-family:"Noto Sans HK","PingFang HK","Microsoft JhengHei","Helvetica Neue",Arial,sans-serif;color:var(--text)}
+  #panorama{position:absolute;inset:0;z-index:1}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:absolute;top:0;left:0;right:0;z-index:30;display:flex;align-items:flex-start;gap:12px;
+    padding:14px 18px;pointer-events:none}
+  .area{pointer-events:auto;background:var(--bar);backdrop-filter:blur(10px);border:1px solid var(--line);
+    border-radius:999px;padding:8px 16px;font-size:14px;letter-spacing:.3px;white-space:nowrap}
+  .area b{font-weight:600}
+  .title{pointer-events:auto;margin-left:auto;background:var(--bar);backdrop-filter:blur(10px);
+    border:1px solid var(--line);border-radius:12px;padding:10px 18px;font-size:16px;font-weight:600;
+    letter-spacing:.5px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+  .title small{font-weight:400;color:var(--muted);font-size:12px}
+  .title .caret{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+    border-top:6px solid var(--muted)}
+
+  /* current room chip */
+  .roomchip{position:absolute;top:96px;left:18px;z-index:30;background:var(--bar);backdrop-filter:blur(10px);
+    border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:15px;font-weight:600}
+  .roomchip span{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:2px}
+
+  /* ---------- right side buttons ---------- */
+  .side{position:absolute;top:14px;right:18px;z-index:30;display:none;flex-direction:column;gap:8px}
+  .hud{position:absolute;right:18px;top:74px;z-index:30;display:flex;flex-direction:column;gap:8px}
+  .hud button{pointer-events:auto;background:var(--bar);backdrop-filter:blur(10px);border:1px solid var(--line);
+    color:var(--text);border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;gap:8px}
+  .hud button:hover{background:var(--bar-solid)}
+  .hud button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7}
+
+  /* ---------- bottom panel ---------- */
+  .panel{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;z-index:30;width:min(1080px,94vw);
+    background:var(--bar);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:16px;
+    padding:12px 14px 14px}
+  .panel h3{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.6px;color:var(--text);
+    display:flex;align-items:center;gap:8px}
+  .panel h3 em{font-style:normal;color:var(--muted);font-weight:400;letter-spacing:0}
+  .rail{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+  .rail::-webkit-scrollbar{height:6px}
+  .rail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px}
+  .thumb{flex:0 0 auto;width:150px;border:0;background:none;padding:0;cursor:pointer;color:var(--text);
+    font-family:inherit;text-align:center}
+  .thumb img{width:150px;height:84px;object-fit:cover;border-radius:8px;display:block;
+    border:2px solid transparent;transition:border-color .18s,transform .18s;opacity:.86}
+  .thumb:hover img{transform:translateY(-2px);opacity:1}
+  .thumb.active img{border-color:var(--accent);opacity:1}
+  .thumb.active span{color:var(--accent)}
+  .thumb span{display:block;margin-top:6px;font-size:12.5px;color:var(--muted)}
+
+  .nav{position:absolute;top:50%;transform:translateY(-50%);z-index:30;width:44px;height:44px;border-radius:50%;
+    background:var(--bar);border:1px solid var(--line);color:var(--text);cursor:pointer;display:flex;
+    align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+  .nav:hover{background:var(--bar-solid)}
+  .nav.prev{left:14px}
+  .nav.next{right:14px}
+
+  /* ---------- floor plan modal ---------- */
+  .modal{position:absolute;inset:0;z-index:60;background:rgba(8,9,11,.82);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;padding:24px}
+  .modal.open{display:flex}
+  .modal figure{margin:0;max-width:min(1000px,92vw);max-height:90vh;display:flex;flex-direction:column;gap:12px;
+    background:#15181b;border:1px solid var(--line);border-radius:16px;padding:16px}
+  .modal img{max-width:100%;max-height:74vh;object-fit:contain;border-radius:10px;background:#fff}
+  .modal figcaption{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:16px;align-items:center}
+  .modal .close{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;
+    padding:6px 12px;cursor:pointer;font-family:inherit;font-size:13px}
+
+  .hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40;
+    background:var(--bar-solid);border:1px solid var(--line);border-radius:999px;padding:12px 22px;
+    font-size:13.5px;color:var(--text);transition:opacity .6s;pointer-events:none;white-space:nowrap}
+  .hint.hide{opacity:0}
+  @media (max-width:720px){
+    .area{display:none}
+    .roomchip{top:74px;left:12px;font-size:13.5px;padding:8px 12px}
+    .title{font-size:13.5px;padding:8px 12px}
+    .panel{bottom:12px;padding:10px;border-radius:14px}
+    .thumb,.thumb img{width:116px}
+    .thumb img{height:66px}
+  }
+</style>
+</head>
+<body>
+
+<div id="panorama"></div>
+
+<!-- current room -->
+<div class="roomchip" id="roomchip">客廳<span>約 22.6㎡</span></div>
+
+<!-- top bar -->
+<div class="topbar">
+  <div class="area">面積：<b>約 143.00㎡</b>　·　4 房 1 套</div>
+  <div class="title">嘉雲臺 4房1套 1811呎 <span class="caret"></span></div>
+</div>
+
+<!-- side tools -->
+<div class="hud">
+  <button id="btnPlan" title="查看戶型圖">
+    <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M9 3v18M3 9h18"/></svg>戶型圖
+  </button>
+  <button id="btnFull" title="全螢幕">
+    <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>全螢幕
+  </button>
+</div>
+
+<!-- prev / next -->
+<button class="nav prev" id="btnPrev" title="上一空間">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>
+</button>
+<button class="nav next" id="btnNext" title="下一空間">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+</button>
+
+<!-- bottom panel -->
+<div class="panel">
+  <h3>全部空間 <em>· 拖曳畫面環視，滾輪縮放</em></h3>
+  <div class="rail" id="rail"></div>
+</div>
+
+<div class="hint" id="hint">拖曳畫面環視四周 · 點選下方空間切換</div>
+
+<!-- floor plan -->
+<div class="modal" id="planModal">
+  <figure>
+    <img src="assets/floorplan.jpg" alt="嘉雲臺 4房1套 戶型圖">
+    <figcaption>
+      <span>嘉雲臺 4房1套 1811呎　·　面積約 143.00㎡（客廳、飯廳、廚房、主人房、睡房 1–3、浴室、走廊、露台、工人房）</span>
+      <button class="close" id="btnPlanClose">關閉</button>
+    </figcaption>
+  </figure>
+</div>
+
+<script src="assets/pannellum.js"></script>
+<script>
+const ROOMS = [
+  {id:'living',   name:'客廳',   area:'約 22.6㎡', pano:'pano/01-living.jpg'},
+  {id:'dining',   name:'飯廳',   area:'約 24.8㎡', pano:'pano/02-dining.jpg'},
+  {id:'kitchen',  name:'廚房',   area:'約 10.2㎡', pano:'pano/03-kitchen.jpg'},
+  {id:'master',   name:'主人房', area:'約 19.1㎡', pano:'pano/04-master.jpg'},
+  {id:'bed1',     name:'睡房 1', area:'約 8.6㎡',  pano:'pano/05-bed1.jpg'},
+  {id:'bed2',     name:'睡房 2', area:'約 10.5㎡', pano:'pano/06-bed2.jpg'},
+  {id:'bed3',     name:'睡房 3', area:'約 15.1㎡', pano:'pano/07-bed3.jpg'},
+  {id:'bath',     name:'浴室',   area:'約 6.0㎡',  pano:'pano/08-bath.jpg'},
+  {id:'corridor', name:'走廊',   area:'約 4.1㎡',  pano:'pano/09-corridor.jpg'},
+  {id:'balcony',  name:'露台',   area:'約 2.6㎡',  pano:'pano/10-balcony.jpg'},
+  {id:'maid',     name:'工人房', area:'約 4.2㎡',  pano:'pano/11-maid.jpg'}
+];
+
+const idx = id => ROOMS.findIndex(r => r.id === id);
+const at  = i => ROOMS[(i + ROOMS.length) % ROOMS.length];
+
+/* build pannellum scenes with prev/next hotspots */
+const scenes = {};
+ROOMS.forEach((r, i) => {
+  const prev = at(i - 1), next = at(i + 1);
+  scenes[r.id] = {
+    type: 'equirectangular',
+    panorama: r.pano,
+    pitch: 0,
+    yaw: 0,
+    hfov: 105,
+    autoLoad: true,
+    hotSpots: [
+      {pitch:-6, yaw:-152, type:'scene', text:'◀ ' + prev.name, sceneId:prev.id},
+      {pitch:-6, yaw: 152, type:'scene', text:next.name + ' ▶', sceneId:next.id}
+    ]
+  };
+});
+
+let viewer;
+try {
+  viewer = pannellum.viewer('panorama', {
+    default: {
+      firstScene: 'living',
+      sceneFadeDuration: 700,
+      autoLoad: true,
+      showControls: false,
+      hfov: 105,
+      compass: false,
+      orientationOnByDefault: false
+    },
+    scenes: scenes
+  });
+} catch (err) {
+  document.body.insertAdjacentHTML('beforeend',
+    '<div style="position:absolute;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;' +
+    'background:#0d0f11;padding:32px;text-align:center;line-height:1.9;font-size:15px">' +
+    '<div>無法在此模式載入 VR 全景（瀏覽器的 file:// 安全限制）。<br>' +
+    '請在本資料夾（vr/）開啟終端機執行：<br>' +
+    '<code style="display:inline-block;margin-top:10px;background:#1b1f23;border:1px solid rgba(255,255,255,.18);' +
+    'border-radius:8px;padding:8px 14px">python3 -m http.server 8000</code><br>' +
+    '然後在瀏覽器開啟 <b>http://localhost:8000</b></div></div>');
+}
+
+/* ---------- UI wiring ---------- */
+const rail = document.getElementById('rail');
+ROOMS.forEach(r => {
+  const btn = document.createElement('button');
+  btn.className = 'thumb';
+  btn.dataset.id = r.id;
+  btn.innerHTML = '<img src="' + r.pano.replace('.jpg', '.jpg') + '" alt="' + r.name + '">' +
+                  '<span>' + r.name + '</span>';
+  // use the small thumbs for the rail
+  btn.querySelector('img').src = r.pano.replace('/pano/', '/pano/thumbs/');
+  btn.addEventListener('click', () => viewer.loadScene(r.id));
+  rail.appendChild(btn);
+});
+
+const chip = document.getElementById('roomchip');
+function sync(id){
+  const r = ROOMS.find(x => x.id === id) || ROOMS[0];
+  chip.innerHTML = r.name + '<span>' + r.area + '</span>';
+  document.title = r.name + ' · 嘉雲臺 4房1套 1811呎 · 3D VR 導覽';
+  document.querySelectorAll('.thumb').forEach(t => t.classList.toggle('active', t.dataset.id === id));
+  const active = document.querySelector('.thumb.active');
+  if (active) active.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'});
+}
+viewer.on('scenechange', sync);
+
+document.getElementById('btnPrev').onclick = () => viewer.loadScene(at(idx(viewer.getScene()) - 1).id);
+document.getElementById('btnNext').onclick = () => viewer.loadScene(at(idx(viewer.getScene()) + 1).id);
+
+const modal = document.getElementById('planModal');
+document.getElementById('btnPlan').onclick = () => modal.classList.add('open');
+document.getElementById('btnPlanClose').onclick = () => modal.classList.remove('open');
+modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+document.getElementById('btnFull').onclick = () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen();
+};
+
+/* keyboard navigation */
+document.addEventListener('keydown', e => {
+  const i = idx(viewer.getScene());
+  if (e.key === 'ArrowRight') viewer.loadScene(at(i + 1).id);
+  if (e.key === 'ArrowLeft')  viewer.loadScene(at(i - 1).id);
+  if (e.key === 'Escape')     modal.classList.remove('open');
+});
+
+setTimeout(() => document.getElementById('hint').classList.add('hide'), 3500);
+sync('living');
+</script>
+</body>
+</html>
